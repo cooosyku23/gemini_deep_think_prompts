@@ -131,46 +131,60 @@ findings:
     fix_cost: "Medium"
     fix_sketch: "責務ごとにクラスを分割する。データ取得(Repository)、データ処理(Service)、レポートフォーマット(Formatter)に分ける。FormatterはStrategyパターンを適用し、新しいフォーマットを簡単に追加できるようにする。"
     fix_example: |
-      # 修正後のイメージ（複数ファイルにまたがるため抜粋）
-      
-      # --- a/report_formatter.py (New File)
-      # +++ b/report_formatter.py
-      # +from abc import ABC, abstractmethod
-      # +
-      # +class ReportFormatter(ABC):
-      # +    @abstractmethod
-      # +    def format(self, data):
-      # +        pass
-      # +
-      # +class PdfFormatter(ReportFormatter):
-      # +    def format(self, data):
-      # +        # PDF generation logic
-      # +        return "PDF Report"
-      # +
-      # +class CsvFormatter(ReportFormatter):
-      # +    def format(self, data):
-      # +        # CSV generation logic
-      # +        return "CSV,Report"
-      
-      # --- a/report_service.py (Refactored)
-      # +++ b/report_service.py
-      # +class ReportService:
-      # +    def __init__(self, repository):
-      # +        self.repository = repository
-      # +
-      # +    def create_report_data(self, query_data):
-      # +        db_data = self.repository.fetch(query_data)
-      # +        processed_data = self._process(db_data)
-      # +        return processed_data
-      
-      # --- a/main.py (Usage Example)
-      # +++ b/main.py
-      # +formatters = {"pdf": PdfFormatter(), "csv": CsvFormatter()}
-      # +report_service = ReportService(DbRepository())
-      # +
-      # +data = report_service.create_report_data(...)
-      # +formatter = formatters.get(user_selected_format)
-      # +report = formatter.format(data)
+      --- /dev/null
+      +++ b/report_formatter.py
+      @@ -0,0 +1,21 @@
+      +from abc import ABC, abstractmethod
+      +
+      +class ReportFormatter(ABC):
+      +    @abstractmethod
+      +    def format(self, data):
+      +        ...
+      +
+      +class PdfFormatter(ReportFormatter):
+      +    def format(self, data):
+      +        # PDF generation logic
+      +        return "PDF Report"
+      +
+      +class CsvFormatter(ReportFormatter):
+      +    def format(self, data):
+      +        # CSV generation logic
+      +        return "CSV,Report"
+      +
+      --- a/report_service.py
+      +++ b/report_service.py
+      @@ -1,12 +1,14 @@
+      -class ReportGenerator:
+      -    def generate_report(self, data, format):
+      -        db_data = self._fetch_data_from_db(data)
+      -        processed_data = self._process_data(db_data)
+      -        if format == "pdf":
+      -            return self._format_as_pdf(processed_data)
+      -        if format == "csv":
+      -            return self._format_as_csv(processed_data)
+      -        raise ValueError("Unsupported format")
+      +class ReportService:
+      +    def __init__(self, repository):
+      +        self.repository = repository
+      +
+      +    def create_report_data(self, query_data):
+      +        db_data = self.repository.fetch(query_data)
+      +        processed_data = self._process_data(db_data)
+      +        return processed_data
+      +
+      --- a/main.py
+      +++ b/main.py
+      @@ -1,3 +1,8 @@
+      -report = ReportGenerator().generate_report(data, user_selected_format)
+      +from report_formatter import PdfFormatter, CsvFormatter
+      +from report_service import ReportService
+      +
+      +formatters = {"pdf": PdfFormatter(), "csv": CsvFormatter()}
+      +report_service = ReportService(DbRepository())
+      +
+      +data = report_service.create_report_data(...)
+      +formatter = formatters.get(user_selected_format)
+      +report = formatter.format(data)
 
     test_plan: |
       - name: "TestSrpAndOcpCompliance"
